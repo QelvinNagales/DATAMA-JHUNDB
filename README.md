@@ -56,3 +56,12 @@ npm run build
 ---
 
 **JhunDB Database Solutions** - Professional database management systems
+
+
+Getting Started
+
+Install Dependencies: Run npm install in the server folder.
+
+Environment Variables: Create a .env file based on .env.example.
+
+Run Dev Mode: Use npm run dev.
