@@ -1,12 +1,31 @@
 import { useState, type FormEvent } from "react";
+import BookListPage from "./BookListPage";
+
+type Page = "home" | "booklist";
 
 function App() {
-  const [query, setQuery] = useState("");
+  const [page, setPage] = useState<Page>("home");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const navigateToBookList = (query: string) => {
+    setSearchQuery(query);
+    setPage("booklist");
+  };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    console.log("City Archive search:", query);
+    navigateToBookList(searchQuery);
   };
+
+  if (page === "booklist") {
+    return (
+      <BookListPage
+        searchQuery={searchQuery}
+        onBack={() => setPage("home")}
+        onSearch={(query) => navigateToBookList(query)}
+      />
+    );
+  }
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
@@ -26,12 +45,22 @@ function App() {
             <div className="text-sm font-semibold tracking-tight text-slate-800 sm:text-base">
               <span>City Archive</span>
             </div>
-            <button
-              type="button"
-              className="inline-flex transform items-center rounded-full border border-white/60 bg-white/60 px-4 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition duration-200 ease-out hover:-translate-y-px hover:bg-white/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/80 focus-visible:ring-offset-0"
-            >
-              Login
-            </button>
+
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={() => navigateToBookList("")}
+                className="inline-flex transform items-center rounded-full px-4 py-1.5 text-sm font-medium text-slate-700 transition duration-200 ease-out hover:-translate-y-px hover:text-slate-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/80 focus-visible:ring-offset-0"
+              >
+                Browse All
+              </button>
+              <button
+                type="button"
+                className="inline-flex transform items-center rounded-full border border-white/60 bg-white/60 px-4 py-1.5 text-sm font-medium text-slate-800 shadow-sm transition duration-200 ease-out hover:-translate-y-px hover:bg-white/80 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-300/80 focus-visible:ring-offset-0"
+              >
+                Login
+              </button>
+            </div>
           </nav>
         </header>
 
@@ -64,8 +93,8 @@ function App() {
 
               <input
                 type="text"
-                value={query}
-                onChange={(event) => setQuery(event.target.value)}
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
                 placeholder="Search authors, books, and more..."
                 className="flex-1 border-none bg-transparent text-sm text-slate-900 placeholder:text-slate-400 outline-none sm:text-base"
               />
