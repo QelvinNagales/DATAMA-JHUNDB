@@ -64,12 +64,14 @@ interface BookListPageProps {
   searchQuery: string;
   onBack: () => void;
   onSearch: (query: string) => void;
+  onSelectBook: (id: number) => void;
 }
 
 export default function BookListPage({
   searchQuery,
   onBack,
   onSearch,
+  onSelectBook,
 }: BookListPageProps) {
   const [inputValue, setInputValue] = useState(searchQuery);
 
@@ -160,9 +162,7 @@ export default function BookListPage({
               <button
                 key={book.id}
                 type="button"
-                onClick={() =>
-                  console.log("Navigating to book ID:", book.id)
-                }
+                onClick={() => onSelectBook(book.id)}
                 className="group flex w-full items-center gap-5 overflow-hidden rounded-2xl border border-white/60 bg-white/40 p-4 text-left shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 sm:gap-6 sm:p-5"
               >
                 {/* Cover thumbnail */}

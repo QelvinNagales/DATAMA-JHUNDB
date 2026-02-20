@@ -1,15 +1,22 @@
 import { useState, type FormEvent } from "react";
 import BookListPage from "./BookListPage";
+import BookDetailsPage from "./BookDetailsPage";
 
-type Page = "home" | "booklist";
+type Page = "home" | "booklist" | "bookdetails";
 
 function App() {
   const [page, setPage] = useState<Page>("home");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedBookId, setSelectedBookId] = useState<number | null>(null);
 
   const navigateToBookList = (query: string) => {
     setSearchQuery(query);
     setPage("booklist");
+  };
+
+  const navigateToBookDetails = (id: number) => {
+    setSelectedBookId(id);
+    setPage("bookdetails");
   };
 
   const handleSubmit = (event: FormEvent) => {
@@ -17,12 +24,22 @@ function App() {
     navigateToBookList(searchQuery);
   };
 
+  if (page === "bookdetails") {
+    return (
+      <BookDetailsPage
+        bookId={selectedBookId!}
+        onBack={() => setPage("booklist")}
+      />
+    );
+  }
+
   if (page === "booklist") {
     return (
       <BookListPage
         searchQuery={searchQuery}
         onBack={() => setPage("home")}
         onSearch={(query) => navigateToBookList(query)}
+        onSelectBook={navigateToBookDetails}
       />
     );
   }
