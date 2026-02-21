@@ -1,20 +1,18 @@
-import { useEffect } from "react";
+import { useBookDetails } from "./hooks/useLibraryData";
 
-// Merged MongoDB (content/metadata) + MySQL (transactional) mock record
-const MOCK_BOOK_DETAIL = {
-  // --- MySQL fields ---
-  id: 1,
-  isbn: "978-971-8958-90-1",
-  available: true,
-  // --- MongoDB fields ---
-  title: "Noli Me Tangere",
-  author: "José Rizal",
-  categories: ["Historical Fiction", "Philippine Literature", "Classic"],
-  synopsis:
-    "Set in the Philippines during Spanish colonial rule, Noli Me Tangere follows Crisostomo Ibarra, a young Filipino who returns home after years of study in Europe. He is eager to fulfill his father's dream of building a school, but finds himself entangled in the corrupt grip of the Spanish friars and the colonial government. A sweeping indictment of abuse and injustice, the novel illuminates the suffering of the Filipino people and laid the intellectual groundwork for the Philippine Revolution. Rizal's masterpiece remains the most celebrated literary work in Philippine history.",
-  coverColor: "from-amber-300/80 to-orange-400/80",
-  publishedYear: 1887,
-  pages: 468,
+// Color palette for book covers based on category
+const getCoverColor = (category: string): string => {
+  const colors: Record<string, string> = {
+    "Historical Fiction": "from-amber-300/80 to-orange-400/80",
+    "Political Novel": "from-rose-300/80 to-pink-400/80",
+    "Epic Poetry": "from-sky-300/80 to-blue-400/80",
+    "Folk Literature": "from-emerald-300/80 to-teal-400/80",
+    "Social Realism": "from-violet-300/80 to-purple-400/80",
+    "Classic": "from-yellow-300/80 to-amber-400/80",
+    "Fiction": "from-indigo-300/80 to-blue-400/80",
+    "Non-Fiction": "from-slate-300/80 to-gray-400/80",
+  };
+  return colors[category] || "from-slate-300/80 to-slate-400/80";
 };
 
 interface BookDetailsPageProps {
@@ -23,17 +21,54 @@ interface BookDetailsPageProps {
 }
 
 export default function BookDetailsPage({ bookId, onBack }: BookDetailsPageProps) {
-  const book = MOCK_BOOK_DETAIL;
-
-  useEffect(() => {
-    console.log(
-      `[Telemetry] VIEW_DETAILS logged to MongoDB for Book ID: ${bookId}`
-    );
-  }, [bookId]);
+  const { book, loading, error } = useBookDetails(bookId);
 
   const handleActionClick = () => {
     console.log("[Transaction] Initiating MySQL CALL borrow() process...");
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-32 left-1/2 h-[56rem] w-[56rem] -translate-x-1/2 rounded-full bg-amber-300/80 blur-3xl" />
+          <div className="absolute -left-40 top-10 h-[48rem] w-[48rem] rounded-full bg-rose-300/75 blur-3xl" />
+        </div>
+        <div className="relative flex min-h-screen items-center justify-center">
+          <div className="flex items-center">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-900"></div>
+            <span className="ml-3 text-slate-600">Loading book details...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !book) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
+        <div aria-hidden="true" className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-32 left-1/2 h-[56rem] w-[56rem] -translate-x-1/2 rounded-full bg-amber-300/80 blur-3xl" />
+        </div>
+        <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+          <div className="rounded-2xl border border-red-200 bg-red-50/50 p-8 text-center backdrop-blur-xl">
+            <p className="text-lg text-red-700">Failed to load book details</p>
+            <p className="mt-2 text-sm text-slate-600">{error || "Book not found"}</p>
+            <button
+              onClick={onBack}
+              className="mt-4 rounded-full bg-slate-900 px-6 py-2 text-sm font-medium text-white"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const coverColor = getCoverColor(book.category_name);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
@@ -76,34 +111,44 @@ export default function BookDetailsPage({ bookId, onBack }: BookDetailsPageProps
               {/* Left column — Cover visual */}
               <div className="flex flex-none flex-col items-center justify-start bg-white/20 p-6 md:w-72 md:p-8">
                 <div
-                  className={`flex w-full flex-col items-center justify-center rounded-2xl border border-white/40 bg-gradient-to-br ${book.coverColor} aspect-[2/3] shadow-inner`}
+                  className={`flex w-full flex-col items-center justify-center rounded-2xl border border-white/40 bg-gradient-to-br ${coverColor} aspect-[2/3] shadow-inner`}
                 >
-                  {/* Book icon */}
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="h-16 w-16 text-white/70"
-                  >
-                    <path
-                      d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM6 4h5v8l-2.5-1.5L6 12V4Z"
-                      fill="currentColor"
+                  {/* Book icon or cover image */}
+                  {book.cover_image_url ? (
+                    <img
+                      src={book.cover_image_url}
+                      alt={book.title}
+                      className="h-full w-full rounded-2xl object-cover"
                     />
-                  </svg>
-                  <span className="mt-3 text-xs font-medium tracking-widest text-white/60 uppercase">
-                    Book Cover
-                  </span>
+                  ) : (
+                    <>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        className="h-16 w-16 text-white/70"
+                      >
+                        <path
+                          d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM6 4h5v8l-2.5-1.5L6 12V4Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <span className="mt-3 text-xs font-medium tracking-widest text-white/60 uppercase">
+                        Book Cover
+                      </span>
+                    </>
+                  )}
                 </div>
 
                 {/* Extra metadata below cover */}
                 <div className="mt-5 w-full space-y-2 text-center">
                   <p className="text-xs text-slate-500">
                     <span className="font-medium text-slate-700">Published</span>{" "}
-                    {book.publishedYear}
+                    {book.publication_year || "N/A"}
                   </p>
                   <p className="text-xs text-slate-500">
-                    <span className="font-medium text-slate-700">Pages</span>{" "}
-                    {book.pages}
+                    <span className="font-medium text-slate-700">Copies</span>{" "}
+                    {book.available_copies}/{book.total_copies}
                   </p>
                 </div>
               </div>
@@ -116,7 +161,7 @@ export default function BookDetailsPage({ bookId, onBack }: BookDetailsPageProps
                   <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
                     {book.title}
                   </h1>
-                  <p className="mt-1.5 text-lg text-slate-600">{book.author}</p>
+                  <p className="mt-1.5 text-lg text-slate-600">{book.author_name}</p>
                 </div>
 
                 {/* Category pills */}
@@ -131,20 +176,46 @@ export default function BookDetailsPage({ bookId, onBack }: BookDetailsPageProps
                   ))}
                 </div>
 
-                {/* Synopsis */}
-                <div>
-                  <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
-                    Synopsis
-                  </h2>
-                  <p className="leading-relaxed text-slate-700">{book.synopsis}</p>
-                </div>
+                {/* Synopsis/Summary */}
+                {(book.synopsis || book.summary) && (
+                  <div>
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                      Synopsis
+                    </h2>
+                    <p className="leading-relaxed text-slate-700">{book.synopsis || book.summary}</p>
+                  </div>
+                )}
+
+                {/* Author Bio */}
+                {book.author_bio && (
+                  <div>
+                    <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
+                      About the Author
+                    </h2>
+                    <p className="leading-relaxed text-slate-700">{book.author_bio}</p>
+                  </div>
+                )}
+
+                {/* Tags */}
+                {book.tags && book.tags.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {book.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600"
+                      >
+                        #{tag}
+                      </span>
+                    ))}
+                  </div>
+                )}
 
                 {/* ISBN */}
                 <div>
                   <h2 className="mb-1 text-xs font-semibold uppercase tracking-widest text-slate-500">
                     ISBN
                   </h2>
-                  <p className="font-mono text-sm text-slate-500">{book.isbn}</p>
+                  <p className="font-mono text-sm text-slate-500">{book.isbn || "N/A"}</p>
                 </div>
 
                 {/* Divider */}

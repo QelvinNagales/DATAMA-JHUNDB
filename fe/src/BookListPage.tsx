@@ -1,64 +1,20 @@
 import { useState, type FormEvent } from "react";
+import { useBooks } from "./hooks/useLibraryData";
 
-interface Book {
-  id: number;
-  title: string;
-  author: string;
-  genre: string;
-  available: boolean;
-  coverColor: string;
-}
-
-const MOCK_BOOKS: Book[] = [
-  {
-    id: 1,
-    title: "Noli Me Tangere",
-    author: "José Rizal",
-    genre: "Historical Fiction",
-    available: true,
-    coverColor: "from-amber-300/80 to-orange-400/80",
-  },
-  {
-    id: 2,
-    title: "El Filibusterismo",
-    author: "José Rizal",
-    genre: "Political Novel",
-    available: false,
-    coverColor: "from-rose-300/80 to-pink-400/80",
-  },
-  {
-    id: 3,
-    title: "Florante at Laura",
-    author: "Francisco Balagtas",
-    genre: "Epic Poetry",
-    available: true,
-    coverColor: "from-sky-300/80 to-blue-400/80",
-  },
-  {
-    id: 4,
-    title: "Ibong Adarna",
-    author: "Anonymous",
-    genre: "Folk Literature",
-    available: true,
-    coverColor: "from-emerald-300/80 to-teal-400/80",
-  },
-  {
-    id: 5,
-    title: "Po-on",
-    author: "F. Sionil José",
-    genre: "Historical Fiction",
-    available: false,
-    coverColor: "from-violet-300/80 to-purple-400/80",
-  },
-  {
-    id: 6,
-    title: "Banaag at Sikat",
-    author: "Lope K. Santos",
-    genre: "Social Realism",
-    available: true,
-    coverColor: "from-yellow-300/80 to-amber-400/80",
-  },
-];
+// Color palette for book covers based on category
+const getCoverColor = (category: string): string => {
+  const colors: Record<string, string> = {
+    "Historical Fiction": "from-amber-300/80 to-orange-400/80",
+    "Political Novel": "from-rose-300/80 to-pink-400/80",
+    "Epic Poetry": "from-sky-300/80 to-blue-400/80",
+    "Folk Literature": "from-emerald-300/80 to-teal-400/80",
+    "Social Realism": "from-violet-300/80 to-purple-400/80",
+    "Classic": "from-yellow-300/80 to-amber-400/80",
+    "Fiction": "from-indigo-300/80 to-blue-400/80",
+    "Non-Fiction": "from-slate-300/80 to-gray-400/80",
+  };
+  return colors[category] || "from-slate-300/80 to-slate-400/80";
+};
 
 interface BookListPageProps {
   searchQuery: string;
@@ -74,6 +30,7 @@ export default function BookListPage({
   onSelectBook,
 }: BookListPageProps) {
   const [inputValue, setInputValue] = useState(searchQuery);
+  const { books, loading, error } = useBooks(searchQuery || undefined);
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -157,81 +114,122 @@ export default function BookListPage({
             </button>
           </form>
 
-          <div className="flex flex-col gap-4">
-            {MOCK_BOOKS.map((book) => (
-              <button
-                key={book.id}
-                type="button"
-                onClick={() => onSelectBook(book.id)}
-                className="group flex w-full items-center gap-5 overflow-hidden rounded-2xl border border-white/60 bg-white/40 p-4 text-left shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 sm:gap-6 sm:p-5"
-              >
-                {/* Cover thumbnail */}
-                <div
-                  className={`flex h-20 w-14 flex-none items-center justify-center rounded-xl bg-gradient-to-br ${book.coverColor} shadow-md sm:h-24 sm:w-16`}
-                >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                    className="h-7 w-7 text-white/80"
+          {/* Loading state */}
+          {loading && (
+            <div className="flex items-center justify-center py-16">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-slate-300 border-t-slate-900"></div>
+              <span className="ml-3 text-slate-600">Loading books...</span>
+            </div>
+          )}
+
+          {/* Error state */}
+          {error && (
+            <div className="rounded-2xl border border-red-200 bg-red-50/50 p-6 text-center backdrop-blur-xl">
+              <p className="text-red-700">Failed to load books: {error}</p>
+              <p className="mt-2 text-sm text-slate-600">Make sure the backend server is running on port 5000</p>
+            </div>
+          )}
+
+          {/* Empty state */}
+          {!loading && !error && books.length === 0 && (
+            <div className="rounded-2xl border border-white/60 bg-white/40 p-8 text-center backdrop-blur-xl">
+              <p className="text-lg text-slate-600">No books found</p>
+              {searchQuery && (
+                <p className="mt-2 text-sm text-slate-500">
+                  Try a different search term
+                </p>
+              )}
+            </div>
+          )}
+
+          {/* Book list */}
+          {!loading && !error && books.length > 0 && (
+            <div className="flex flex-col gap-4">
+              {books.map((book) => {
+                const isAvailable = book.available_copies > 0;
+                const coverColor = getCoverColor(book.category_name);
+                
+                return (
+                  <button
+                    key={book.book_id}
+                    type="button"
+                    onClick={() => onSelectBook(book.book_id)}
+                    className="group flex w-full items-center gap-5 overflow-hidden rounded-2xl border border-white/60 bg-white/40 p-4 text-left shadow-xl backdrop-blur-xl transition-all duration-300 hover:-translate-y-0.5 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 sm:gap-6 sm:p-5"
                   >
-                    <path
-                      d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM6 4h5v8l-2.5-1.5L6 12V4Z"
-                      fill="currentColor"
-                    />
-                  </svg>
-                </div>
-
-                {/* Metadata */}
-                <div className="flex min-w-0 flex-1 flex-col gap-1.5">
-                  <p className="truncate text-base font-bold leading-snug text-slate-900 sm:text-lg">
-                    {book.title}
-                  </p>
-                  <p className="text-sm text-slate-600">{book.author}</p>
-
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    {/* Genre pill */}
-                    <span className="rounded-full border border-white/60 bg-white/60 px-2.5 py-0.5 text-xs font-medium text-slate-700 backdrop-blur-sm">
-                      {book.genre}
-                    </span>
-
-                    {/* Availability badge */}
-                    <span
-                      className={`flex items-center gap-1.5 text-xs font-medium ${
-                        book.available ? "text-emerald-700" : "text-slate-500"
-                      }`}
+                    {/* Cover thumbnail */}
+                    <div
+                      className={`flex h-20 w-14 flex-none items-center justify-center rounded-xl bg-gradient-to-br ${coverColor} shadow-md sm:h-24 sm:w-16`}
                     >
-                      <span
-                        className={`h-2 w-2 rounded-full ${
-                          book.available
-                            ? "bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.6)]"
-                            : "bg-slate-400"
-                        }`}
-                      />
-                      {book.available ? "Available" : "Checked Out"}
-                    </span>
-                  </div>
-                </div>
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        viewBox="0 0 24 24"
+                        aria-hidden="true"
+                        className="h-7 w-7 text-white/80"
+                      >
+                        <path
+                          d="M18 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2ZM6 4h5v8l-2.5-1.5L6 12V4Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                    </div>
 
-                {/* Chevron */}
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                  className="h-5 w-5 flex-none text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5"
-                >
-                  <path
-                    d="M9 18l6-6-6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    fill="none"
-                  />
-                </svg>
-              </button>
-            ))}
-          </div>
+                    {/* Metadata */}
+                    <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                      <p className="truncate text-base font-bold leading-snug text-slate-900 sm:text-lg">
+                        {book.title}
+                      </p>
+                      <p className="text-sm text-slate-600">{book.author_name}</p>
+
+                      <div className="mt-2 flex flex-wrap items-center gap-2">
+                        {/* Genre pill */}
+                        <span className="rounded-full border border-white/60 bg-white/60 px-2.5 py-0.5 text-xs font-medium text-slate-700 backdrop-blur-sm">
+                          {book.category_name || "Uncategorized"}
+                        </span>
+
+                        {/* Copies info */}
+                        <span className="text-xs text-slate-500">
+                          {book.available_copies}/{book.total_copies} copies
+                        </span>
+
+                        {/* Availability badge */}
+                        <span
+                          className={`flex items-center gap-1.5 text-xs font-medium ${
+                            isAvailable ? "text-emerald-700" : "text-slate-500"
+                          }`}
+                        >
+                          <span
+                            className={`h-2 w-2 rounded-full ${
+                              isAvailable
+                                ? "bg-emerald-400 shadow-[0_0_6px_1px_rgba(52,211,153,0.6)]"
+                                : "bg-slate-400"
+                            }`}
+                          />
+                          {isAvailable ? "Available" : "Checked Out"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Chevron */}
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                      className="h-5 w-5 flex-none text-slate-400 transition-transform duration-200 group-hover:translate-x-0.5"
+                    >
+                      <path
+                        d="M9 18l6-6-6-6"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        fill="none"
+                      />
+                    </svg>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </main>
       </div>
 
