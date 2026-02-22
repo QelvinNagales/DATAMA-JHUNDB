@@ -3,7 +3,7 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AdminLayout from "./components/AdminLayout";
 
-import Login from "./pages/Login";
+import Home from "./pages/Home";
 import Unauthorized from "./pages/Unauthorized";
 import MemberDashboard from "./pages/MemberDashboard";
 
@@ -17,8 +17,8 @@ function App() {
       <BrowserRouter>
         <Routes>
           {/* Public */}
-          <Route path="/" element={<Navigate to="/login" replace />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<Navigate to="/" replace />} />
           <Route path="/unauthorized" element={<Unauthorized />} />
 
           {/* Member */}
