@@ -9,21 +9,44 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, role: Role) => void;
+  login: (email: string, password: string, role: Role) => boolean;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+// Mock credentials
+const ADMIN_CREDENTIALS = { email: "admin@jhundb.com", password: "admin123" };
+const MEMBER_CREDENTIALS = { email: "member@jhundb.com", password: "member123" };
 
-  const login = (email: string, role: Role) => {
-    setUser({ email, role });
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<User | null>(() => {
+    const stored = localStorage.getItem("library_user");
+    return stored ? JSON.parse(stored) : null;
+  });
+
+  const login = (email: string, password: string, role: Role): boolean => {
+    if (role === "admin") {
+      if (email === ADMIN_CREDENTIALS.email && password === ADMIN_CREDENTIALS.password) {
+        const u = { email, role };
+        setUser(u);
+        localStorage.setItem("library_user", JSON.stringify(u));
+        return true;
+      }
+    } else {
+      if (email === MEMBER_CREDENTIALS.email && password === MEMBER_CREDENTIALS.password) {
+        const u = { email, role };
+        setUser(u);
+        localStorage.setItem("library_user", JSON.stringify(u));
+        return true;
+      }
+    }
+    return false;
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem("library_user");
   };
 
   return (
