@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/api/client";
 
 type AdminPage = "cto" | "circulation" | "cataloging" | "member-registration" | "financial-settlement";
 
@@ -12,29 +13,45 @@ interface Fine {
   loan_id: string;
   member_name: string;
   amount: string;
+  amountNum: number;
   is_paid: boolean;
 }
 
-const mockFines: Fine[] = [
-  { fine_id: "F-001", loan_id: "LOAN-00214", member_name: "R. Santos",     amount: "₱40.00", is_paid: false },
-  { fine_id: "F-002", loan_id: "LOAN-00389", member_name: "M. dela Cruz",  amount: "₱20.00", is_paid: false },
-  { fine_id: "F-003", loan_id: "LOAN-00521", member_name: "J. Reyes",      amount: "₱60.00", is_paid: false },
-  { fine_id: "F-004", loan_id: "LOAN-00677", member_name: "A. Villanueva", amount: "₱30.00", is_paid: false },
-];
-
 export default function FinancialSettlementPage({ onNavigate, onLogout }: FinancialSettlementPageProps) {
-  const [fines, setFines] = useState<Fine[]>(mockFines);
+  const [fines, setFines] = useState<Fine[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    apiFetch("/api/fines/unpaid")
+      .then((data: { fine_id: number; loan_id: number; amount: number; is_paid: boolean }[]) => {
+        const mapped: Fine[] = (data || []).map((row) => ({
+          fine_id: String(row.fine_id),
+          loan_id: String(row.loan_id),
+          member_name: "—",
+          amount: typeof row.amount === "number" ? `₱${row.amount.toFixed(2)}` : String(row.amount),
+          amountNum: Number(row.amount) || 0,
+          is_paid: Boolean(row.is_paid),
+        }));
+        setFines(mapped);
+      })
+      .catch((err: { message?: string }) => setError(err?.message || "Failed to load fines."))
+      .finally(() => setLoading(false));
+  }, []);
 
   const handleSettle = (fine_id: string) => {
-    console.log(`[MySQL] Executing UPDATE on fines table SET is_paid = TRUE WHERE fine_id = ${fine_id}`);
-    setFines((prev) =>
-      prev.map((f) => (f.fine_id === fine_id ? { ...f, is_paid: true } : f))
-    );
+    apiFetch("/api/fines/settle/" + fine_id, { method: "PUT" })
+      .then(() => {
+        setFines((prev) =>
+          prev.map((f) => (f.fine_id === fine_id ? { ...f, is_paid: true } : f))
+        );
+      })
+      .catch((err: { message?: string }) => setError(err?.message || "Failed to settle fine."));
   };
 
   const totalUnpaid = fines
     .filter((f) => !f.is_paid)
-    .reduce((sum, f) => sum + parseFloat(f.amount.replace("₱", "")), 0);
+    .reduce((sum, f) => sum + f.amountNum, 0);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
@@ -142,6 +159,16 @@ export default function FinancialSettlementPage({ onNavigate, onLogout }: Financ
           <p className="mt-1 text-sm text-slate-500">Outstanding Account Receivables</p>
         </header>
 
+        {error && (
+          <div className="mb-6 rounded-2xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm text-rose-800">
+            {error}
+          </div>
+        )}
+
+        {loading ? (
+          <p className="text-slate-500">Loading fines…</p>
+        ) : (
+        <>
         {/* Summary stat */}
         <div className="mb-6 inline-flex items-center gap-3 rounded-2xl border border-white/60 bg-white/40 px-5 py-3 shadow-lg backdrop-blur-xl">
           <div>
@@ -290,6 +317,8 @@ export default function FinancialSettlementPage({ onNavigate, onLogout }: Financ
             </p>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

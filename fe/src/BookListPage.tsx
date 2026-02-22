@@ -1,4 +1,5 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
+import { apiFetch } from "@/api/client";
 
 interface Book {
   id: number;
@@ -9,56 +10,24 @@ interface Book {
   coverColor: string;
 }
 
-const MOCK_BOOKS: Book[] = [
-  {
-    id: 1,
-    title: "Noli Me Tangere",
-    author: "José Rizal",
-    genre: "Historical Fiction",
-    available: true,
-    coverColor: "from-amber-300/80 to-orange-400/80",
-  },
-  {
-    id: 2,
-    title: "El Filibusterismo",
-    author: "José Rizal",
-    genre: "Political Novel",
-    available: false,
-    coverColor: "from-rose-300/80 to-pink-400/80",
-  },
-  {
-    id: 3,
-    title: "Florante at Laura",
-    author: "Francisco Balagtas",
-    genre: "Epic Poetry",
-    available: true,
-    coverColor: "from-sky-300/80 to-blue-400/80",
-  },
-  {
-    id: 4,
-    title: "Ibong Adarna",
-    author: "Anonymous",
-    genre: "Folk Literature",
-    available: true,
-    coverColor: "from-emerald-300/80 to-teal-400/80",
-  },
-  {
-    id: 5,
-    title: "Po-on",
-    author: "F. Sionil José",
-    genre: "Historical Fiction",
-    available: false,
-    coverColor: "from-violet-300/80 to-purple-400/80",
-  },
-  {
-    id: 6,
-    title: "Banaag at Sikat",
-    author: "Lope K. Santos",
-    genre: "Social Realism",
-    available: true,
-    coverColor: "from-yellow-300/80 to-amber-400/80",
-  },
+const COVER_COLORS = [
+  "from-amber-300/80 to-orange-400/80",
+  "from-rose-300/80 to-pink-400/80",
+  "from-sky-300/80 to-blue-400/80",
+  "from-emerald-300/80 to-teal-400/80",
+  "from-violet-300/80 to-purple-400/80",
+  "from-yellow-300/80 to-amber-400/80",
 ];
+
+interface CatalogItem {
+  book_id: number;
+  title: string;
+  author_name: string | null;
+  category_name: string | null;
+  categories?: string[];
+  available: boolean;
+  cover_image_url?: string | null;
+}
 
 interface BookListPageProps {
   searchQuery: string;
@@ -76,6 +45,44 @@ export default function BookListPage({
   onLogin,
 }: BookListPageProps) {
   const [inputValue, setInputValue] = useState(searchQuery);
+  const [books, setBooks] = useState<Book[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
+    setError("");
+    apiFetch("/api/catalog")
+      .then((data: CatalogItem[]) => {
+        if (cancelled) return;
+        const mapped: Book[] = (data || []).map((row, i) => ({
+          id: row.book_id,
+          title: row.title || "Untitled",
+          author: row.author_name || "Unknown",
+          genre: row.category_name || row.categories?.[0] || "General",
+          available: row.available,
+          coverColor: COVER_COLORS[i % COVER_COLORS.length],
+        }));
+        setBooks(mapped);
+      })
+      .catch((err: { message?: string }) => {
+        if (!cancelled) setError(err?.message || "Failed to load catalog.");
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
+
+  const filteredBooks = searchQuery.trim()
+    ? books.filter(
+        (b) =>
+          b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.author.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          b.genre.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : books;
 
   const handleSearchSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -160,8 +167,17 @@ export default function BookListPage({
             </button>
           </form>
 
+          {error && (
+            <div className="mb-4 rounded-2xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm text-rose-800">
+              {error}
+            </div>
+          )}
+
+          {loading ? (
+            <p className="text-slate-500">Loading catalog…</p>
+          ) : (
           <div className="flex flex-col gap-4">
-            {MOCK_BOOKS.map((book) => (
+            {filteredBooks.map((book) => (
               <button
                 key={book.id}
                 type="button"
@@ -235,6 +251,7 @@ export default function BookListPage({
               </button>
             ))}
           </div>
+          )}
         </main>
       </div>
 

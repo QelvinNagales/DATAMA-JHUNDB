@@ -1,0 +1,57 @@
+services:
+  mysql:
+    image: mysql:8
+    container_name: {CONTAINERNAME}
+    ports:
+      - {PORTS}
+    environment:
+      MYSQL_ROOT_PASSWORD: {DBPASSWORD}
+      MYSQL_DATABASE: {DBLIBRARY}
+    volumes:
+      - {VOLUMES}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  mongo:
+    image: mongo:7
+    container_name: {CONTAINERNAME}
+    ports:
+      - {PORTS}
+    volumes:
+      - {VOLUMES}
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: {CONTAINERNAME}
+    ports:
+      - {PORTS}
+    environment:
+      PMA_HOST: {HOST}
+      PMA_USER: {USER}
+      PMA_PASSWORD: {PASSWORD}
+    depends_on:
+      - mysql
+
+  mongo-express:
+    image: {IMAGE}
+    container_name: {CONTAINERNAME}
+    ports:
+      - "8083:8081"
+    environment:
+      ME_CONFIG_MONGODB_SERVER: {SERVER}
+      ME_CONFIG_BASICAUTH_USERNAME: {USERNAME}
+      ME_CONFIG_BASICAUTH_PASSWORD: {PASSWORD}
+    depends_on:
+      - mongo
+
+volumes:
+  mysql_data:
+  mongo_data:

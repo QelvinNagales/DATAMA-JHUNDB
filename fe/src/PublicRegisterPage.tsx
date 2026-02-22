@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { apiFetch } from "@/api/client";
 
 export default function PublicRegisterPage() {
   const [firstName, setFirstName] = useState("");
@@ -7,19 +8,47 @@ export default function PublicRegisterPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  const handleRegister = (e: FormEvent) => {
+  const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    const mockDuplicate = true;
-    if (mockDuplicate) {
+    setShowError(false);
+    setErrorMessage("");
+    setSuccess(false);
+    setLoading(true);
+    try {
+      await apiFetch("/api/members/register", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          password,
+          phone: phone || undefined,
+          address: undefined,
+        }),
+      });
+      setSuccess(true);
+      setFirstName("");
+      setLastName("");
+      setPhone("");
+      setEmail("");
+      setPassword("");
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Registration failed.";
+      setErrorMessage(msg);
       setShowError(true);
-    } else {
-      setShowError(false);
-      console.log("[MySQL] Executing CALL add_member() stored procedure...");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const dismissError = () => setShowError(false);
+  const dismissError = () => {
+    setShowError(false);
+    setErrorMessage("");
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
@@ -59,7 +88,7 @@ export default function PublicRegisterPage() {
           {showError && (
             <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 shadow-sm backdrop-blur-sm">
               <p className="text-sm text-rose-800">
-                Member already exists or email already registered. Please try again or log in.
+                {errorMessage || "Member already exists or email already registered. Please try again or log in."}
               </p>
               <button
                 type="button"
@@ -71,6 +100,12 @@ export default function PublicRegisterPage() {
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                 </svg>
               </button>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-4 rounded-2xl border border-emerald-200 bg-emerald-100/50 px-4 py-3 text-sm text-emerald-800">
+              Account created successfully. You can now log in.
             </div>
           )}
 
@@ -139,9 +174,10 @@ export default function PublicRegisterPage() {
 
             <button
               type="submit"
-              className="mt-1 w-full transform rounded-full bg-slate-900 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0"
+              disabled={loading}
+              className="mt-1 w-full transform rounded-full bg-slate-900 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0 disabled:opacity-70"
             >
-              Create account
+              {loading ? "Creating account…" : "Create account"}
             </button>
           </form>
 

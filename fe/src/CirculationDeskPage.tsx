@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { apiFetch } from "@/api/client";
 
 type AdminPage = "cto" | "circulation" | "cataloging" | "member-registration" | "financial-settlement";
 
@@ -14,38 +15,72 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
   const [memberId, setMemberId] = useState("");
   const [bookId, setBookId] = useState("");
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [borrowLoading, setBorrowLoading] = useState(false);
+  const [borrowSuccess, setBorrowSuccess] = useState(false);
 
   // Return form state
   const [loanId, setLoanId] = useState("");
   const [showFine, setShowFine] = useState(false);
+  const [fineAmount, setFineAmount] = useState<string | null>(null);
+  const [returnLoading, setReturnLoading] = useState(false);
+  const [returnSuccess, setReturnSuccess] = useState(false);
 
-  /**
-   * Handles the book borrowing process.
-   * In production this will:
-   *   1. Call MySQL stored procedure: CALL borrow(:member_id, :book_id, :librarian_id)
-   *   2. On success, log a BORROW_CONFIRMED event document to MongoDB
-   * Error 1644 from MySQL ("Member has reached the maximum of 5 active loans")
-   * is caught and surfaced via the red alert banner below.
-   */
-  const handleBorrow = (e: FormEvent) => {
+  const handleBorrow = async (e: FormEvent) => {
     e.preventDefault();
-    // Demo: toggle error state to preview the MySQL 1644 error UI
-    setShowError(true);
+    setShowError(false);
+    setErrorMessage("");
+    setBorrowSuccess(false);
+    setBorrowLoading(true);
+    try {
+      await apiFetch("/api/borrow", {
+        method: "POST",
+        body: JSON.stringify({
+          member_id: Number(memberId),
+          book_id: Number(bookId),
+        }),
+      });
+      setMemberId("");
+      setBookId("");
+      setBorrowSuccess(true);
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Request failed.";
+      setErrorMessage(msg);
+      setShowError(true);
+    } finally {
+      setBorrowLoading(false);
+    }
   };
 
-  const dismissError = () => setShowError(false);
+  const dismissError = () => {
+    setShowError(false);
+    setErrorMessage("");
+  };
 
-  /**
-   * Handles the book return process.
-   * In production this will:
-   *   1. Call MySQL stored procedure: CALL return_item(:loan_id)
-   *   2. The procedure automatically calculates and inserts any overdue fine
-   * The fine amount is returned from the procedure and shown in the amber banner.
-   */
-  const handleReturn = (e: FormEvent) => {
+  const handleReturn = async (e: FormEvent) => {
     e.preventDefault();
-    // Demo: toggle fine state to preview the late return fine UI
-    setShowFine(true);
+    setShowFine(false);
+    setFineAmount(null);
+    setReturnSuccess(false);
+    setReturnLoading(true);
+    try {
+      const res = await apiFetch("/api/return", {
+        method: "POST",
+        body: JSON.stringify({ loan_id: Number(loanId) }),
+      });
+      setLoanId("");
+      setReturnSuccess(true);
+      if (res?.fine_amount != null) {
+        setFineAmount(typeof res.fine_amount === "number" ? `₱${res.fine_amount.toFixed(2)}` : String(res.fine_amount));
+        setShowFine(true);
+      }
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Request failed.";
+      setErrorMessage(msg);
+      setShowError(true);
+    } finally {
+      setReturnLoading(false);
+    }
   };
 
   const dismissFine = () => setShowFine(false);
@@ -199,7 +234,7 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                     </p>
                   </div>
 
-                  {/* Error alert — MySQL Error 1644 */}
+                  {/* Error alert — MySQL Error 1644 or other */}
                   {showError && (
                     <div className="mb-5 flex items-start gap-3 rounded-2xl border border-red-200 bg-red-100/50 px-4 py-3 backdrop-blur-sm">
                       <svg
@@ -215,12 +250,7 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                       </svg>
                       <div className="flex-1">
                         <p className="text-sm font-semibold text-red-800">
-                          Loan Limit Reached
-                        </p>
-                        <p className="mt-0.5 text-xs text-red-700">
-                          MySQL Error 1644 — Member has reached the maximum of
-                          5 active loans. Please advise the member to return an
-                          item before borrowing again.
+                          {errorMessage || "Request failed"}
                         </p>
                       </div>
                       <button
@@ -241,6 +271,12 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                           />
                         </svg>
                       </button>
+                    </div>
+                  )}
+
+                  {borrowSuccess && (
+                    <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-100/50 px-4 py-3 text-sm text-emerald-800">
+                      Loan processed successfully.
                     </div>
                   )}
 
@@ -289,9 +325,10 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                       </p>
                       <button
                         type="submit"
-                        className="inline-flex flex-none items-center justify-center rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white shadow-md transition duration-150 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98]"
+                        disabled={borrowLoading}
+                        className="inline-flex flex-none items-center justify-center rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white shadow-md transition duration-150 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-70"
                       >
-                        Process Loan
+                        {borrowLoading ? "Processing…" : "Process Loan"}
                       </button>
                     </div>
                   </form>
@@ -331,7 +368,7 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                         </p>
                         <p className="mt-0.5 text-xs text-amber-700">
                           Item returned past the due date. A fine of{" "}
-                          <span className="font-semibold">₱40.00</span> has
+                          <span className="font-semibold">{fineAmount ?? "—"}</span> has
                           been automatically calculated and added to the
                           member's account.
                         </p>
@@ -354,6 +391,10 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                           />
                         </svg>
                       </button>
+                    </div>
+                  {returnSuccess && (
+                    <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-100/50 px-4 py-3 text-sm text-emerald-800">
+                      Return processed successfully.
                     </div>
                   )}
 
@@ -380,9 +421,10 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                     <div className="mt-2 flex items-center justify-end">
                       <button
                         type="submit"
-                        className="inline-flex flex-none items-center justify-center rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white shadow-md transition duration-150 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98]"
+                        disabled={returnLoading}
+                        className="inline-flex flex-none items-center justify-center rounded-full bg-slate-900 px-6 py-2.5 text-sm font-medium text-white shadow-md transition duration-150 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] disabled:opacity-70"
                       >
-                        Process Return
+                        {returnLoading ? "Processing…" : "Process Return"}
                       </button>
                     </div>
                   </form>

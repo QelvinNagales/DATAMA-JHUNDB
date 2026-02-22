@@ -1,12 +1,28 @@
 import { useState, type FormEvent } from "react";
+import { apiFetch } from "@/api/client";
 
 export default function MemberLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("[Auth] Authenticating member via MySQL accounts...");
+    setError("");
+    setLoading(true);
+    try {
+      await apiFetch("/api/auth/login/member", {
+        method: "POST",
+        body: JSON.stringify({ email, password }),
+      });
+      window.location.href = "/";
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Invalid email or password.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -46,6 +62,12 @@ export default function MemberLogin() {
               </p>
             </div>
           </div>
+
+          {error && (
+            <div className="mb-4 rounded-2xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm text-rose-800">
+              {error}
+            </div>
+          )}
 
           {/* Login form */}
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
@@ -96,9 +118,10 @@ export default function MemberLogin() {
             {/* Submit button */}
             <button
               type="submit"
-              className="mt-1 w-full transform rounded-full bg-slate-900 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0"
+              disabled={loading}
+              className="mt-1 w-full transform rounded-full bg-slate-900 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0 disabled:opacity-70"
             >
-              Access Catalog
+              {loading ? "Signing in…" : "Access Catalog"}
             </button>
           </form>
 

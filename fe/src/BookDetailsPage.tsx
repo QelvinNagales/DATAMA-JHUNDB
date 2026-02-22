@@ -1,21 +1,17 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { apiFetch } from "@/api/client";
 
-// Merged MongoDB (content/metadata) + MySQL (transactional) mock record
-const MOCK_BOOK_DETAIL = {
-  // --- MySQL fields ---
-  id: 1,
-  isbn: "978-971-8958-90-1",
-  available: true,
-  // --- MongoDB fields ---
-  title: "Noli Me Tangere",
-  author: "José Rizal",
-  categories: ["Historical Fiction", "Philippine Literature", "Classic"],
-  synopsis:
-    "Set in the Philippines during Spanish colonial rule, Noli Me Tangere follows Crisostomo Ibarra, a young Filipino who returns home after years of study in Europe. He is eager to fulfill his father's dream of building a school, but finds himself entangled in the corrupt grip of the Spanish friars and the colonial government. A sweeping indictment of abuse and injustice, the novel illuminates the suffering of the Filipino people and laid the intellectual groundwork for the Philippine Revolution. Rizal's masterpiece remains the most celebrated literary work in Philippine history.",
-  coverColor: "from-amber-300/80 to-orange-400/80",
-  publishedYear: 1887,
-  pages: 468,
-};
+interface BookDetail {
+  book_id: number;
+  title: string;
+  isbn: string;
+  available: boolean;
+  author_name: string | null;
+  category_name?: string | null;
+  categories?: string[];
+  synopsis: string | null;
+  cover_image_url?: string | null;
+}
 
 interface BookDetailsPageProps {
   bookId: number;
@@ -23,18 +19,78 @@ interface BookDetailsPageProps {
   onLogin: () => void;
 }
 
+const DEFAULT_COVER = "from-amber-300/80 to-orange-400/80";
+
 export default function BookDetailsPage({ bookId, onBack, onLogin }: BookDetailsPageProps) {
-  const book = MOCK_BOOK_DETAIL;
+  const [book, setBook] = useState<BookDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    console.log(
-      `[Telemetry] VIEW_DETAILS logged to MongoDB for Book ID: ${bookId}`
-    );
+    let cancelled = false;
+    setLoading(true);
+    setNotFound(false);
+    apiFetch("/api/catalog/" + bookId)
+      .then((data: BookDetail) => {
+        if (cancelled) return;
+        setBook(data);
+      })
+      .catch((err: { status?: number }) => {
+        if (cancelled) return;
+        if (err?.status === 404) setNotFound(true);
+        else setBook(null);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [bookId]);
+
+  useEffect(() => {
+    if (bookId == null) return;
+    apiFetch("/api/log", {
+      method: "POST",
+      body: JSON.stringify({
+        event_type: "VIEW_DETAILS",
+        payload: { book_id: bookId },
+        timestamp: new Date().toISOString(),
+      }),
+    }).catch(() => {});
   }, [bookId]);
 
   const handleActionClick = () => {
-    console.log("[Transaction] Initiating MySQL CALL borrow() process...");
+    // Reserve / Borrow: could call POST /api/borrow when member context exists
   };
+
+  if (loading) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
+        <div className="flex min-h-screen items-center justify-center">
+          <p className="text-slate-500">Loading…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !book) {
+    return (
+      <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
+        <div className="flex min-h-screen flex-col items-center justify-center gap-4">
+          <p className="text-slate-600">Book not found.</p>
+          <button
+            type="button"
+            onClick={onBack}
+            className="rounded-full bg-slate-900 px-6 py-2 text-sm font-medium text-white"
+          >
+            Back to catalog
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const coverColor = DEFAULT_COVER;
+  const categories = book.categories?.length ? book.categories : (book.category_name ? [book.category_name] : []);
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
@@ -78,9 +134,8 @@ export default function BookDetailsPage({ bookId, onBack, onLogin }: BookDetails
               {/* Left column — Cover visual */}
               <div className="flex flex-none flex-col items-center justify-start bg-white/20 p-6 md:w-72 md:p-8">
                 <div
-                  className={`flex w-full flex-col items-center justify-center rounded-2xl border border-white/40 bg-gradient-to-br ${book.coverColor} aspect-[2/3] shadow-inner`}
+                  className={`flex w-full flex-col items-center justify-center rounded-2xl border border-white/40 bg-gradient-to-br ${coverColor} aspect-[2/3] shadow-inner`}
                 >
-                  {/* Book icon */}
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     viewBox="0 0 24 24"
@@ -96,18 +151,6 @@ export default function BookDetailsPage({ bookId, onBack, onLogin }: BookDetails
                     Book Cover
                   </span>
                 </div>
-
-                {/* Extra metadata below cover */}
-                <div className="mt-5 w-full space-y-2 text-center">
-                  <p className="text-xs text-slate-500">
-                    <span className="font-medium text-slate-700">Published</span>{" "}
-                    {book.publishedYear}
-                  </p>
-                  <p className="text-xs text-slate-500">
-                    <span className="font-medium text-slate-700">Pages</span>{" "}
-                    {book.pages}
-                  </p>
-                </div>
               </div>
 
               {/* Right column — Information & action */}
@@ -118,12 +161,12 @@ export default function BookDetailsPage({ bookId, onBack, onLogin }: BookDetails
                   <h1 className="text-3xl font-bold leading-tight tracking-tight text-slate-900 sm:text-4xl">
                     {book.title}
                   </h1>
-                  <p className="mt-1.5 text-lg text-slate-600">{book.author}</p>
+                  <p className="mt-1.5 text-lg text-slate-600">{book.author_name ?? "Unknown"}</p>
                 </div>
 
                 {/* Category pills */}
                 <div className="flex flex-wrap gap-2">
-                  {book.categories.map((cat) => (
+                  {categories.map((cat) => (
                     <span
                       key={cat}
                       className="rounded-full border border-white/60 bg-white/60 px-3 py-0.5 text-xs font-medium text-slate-700 backdrop-blur-sm"
@@ -138,7 +181,7 @@ export default function BookDetailsPage({ bookId, onBack, onLogin }: BookDetails
                   <h2 className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-500">
                     Synopsis
                   </h2>
-                  <p className="leading-relaxed text-slate-700">{book.synopsis}</p>
+                  <p className="leading-relaxed text-slate-700">{book.synopsis ?? "No synopsis available."}</p>
                 </div>
 
                 {/* ISBN */}

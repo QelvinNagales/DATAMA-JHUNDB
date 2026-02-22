@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { apiFetch } from "@/api/client";
 
 type AdminPage = "cto" | "circulation" | "cataloging" | "member-registration" | "financial-settlement";
 
@@ -20,16 +21,44 @@ export default function CatalogingPage({ onLogout, onNavigate }: CatalogingPageP
   const [genreTags, setGenreTags] = useState("");
   const [synopsis, setSynopsis] = useState("");
 
-  /**
-   * Handles the hybrid database ingestion.
-   * In production this will:
-   *   1. Call MySQL stored procedure: CALL add_book() with transactional skeleton data
-   *   2. Insert a rich metadata document into MongoDB: catalog_rich_data collection
-   */
-  const handleIngest = (e: FormEvent) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
+
+  const handleIngest = async (e: FormEvent) => {
     e.preventDefault();
-    console.log("[MySQL] Executing CALL add_book() with Skeleton Data...");
-    console.log("[MongoDB] Inserting Rich Data Document to catalog_rich_data...");
+    setError("");
+    setSuccess(false);
+    setLoading(true);
+    try {
+      await apiFetch("/api/books/ingest", {
+        method: "POST",
+        body: JSON.stringify({
+          isbn,
+          title,
+          author_first_name: authorFirst,
+          author_last_name: authorLast,
+          category: category || undefined,
+          cover_image_url: coverImageUrl || undefined,
+          genre_tags: genreTags || undefined,
+          synopsis: synopsis || undefined,
+        }),
+      });
+      setSuccess(true);
+      setIsbn("");
+      setTitle("");
+      setAuthorFirst("");
+      setAuthorLast("");
+      setCategory("");
+      setCoverImageUrl("");
+      setGenreTags("");
+      setSynopsis("");
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Ingest failed.";
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const inputBase =
@@ -161,6 +190,16 @@ export default function CatalogingPage({ onLogout, onNavigate }: CatalogingPageP
             onSubmit={handleIngest}
             className="w-full max-w-6xl rounded-3xl border border-white/60 bg-white/50 p-6 shadow-2xl backdrop-blur-2xl sm:p-8"
           >
+            {error && (
+              <div className="mb-6 rounded-2xl border border-rose-200/80 bg-rose-50/90 px-4 py-3 text-sm text-rose-800">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-100/50 px-4 py-3 text-sm text-emerald-800">
+                Book ingested successfully.
+              </div>
+            )}
             {/* Two-column grid */}
             <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
@@ -357,9 +396,10 @@ export default function CatalogingPage({ onLogout, onNavigate }: CatalogingPageP
             <div className="mt-8 flex flex-col items-center gap-3">
               <button
                 type="submit"
-                className="inline-flex w-full max-w-md transform items-center justify-center rounded-full bg-slate-900 px-10 py-4 text-base font-semibold text-white shadow-lg transition duration-150 ease-out hover:bg-slate-800 hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0 sm:w-auto"
+                className="inline-flex w-full max-w-md transform items-center justify-center rounded-full bg-slate-900 px-10 py-4 text-base font-semibold text-white shadow-lg transition duration-150 ease-out hover:bg-slate-800 hover:shadow-xl active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0 sm:w-auto disabled:opacity-70"
+                disabled={loading}
               >
-                Ingest to Hybrid Database
+                {loading ? "Ingesting…" : "Ingest to Hybrid Database"}
               </button>
               <p className="text-xs text-slate-400">
                 Routes transactional data to MySQL and rich metadata to MongoDB

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { apiFetch } from "@/api/client";
 
 type AdminPage = "cto" | "circulation" | "cataloging" | "member-registration" | "financial-settlement";
 
@@ -17,27 +18,47 @@ export default function MemberRegistrationPage({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showError, setShowError] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [success, setSuccess] = useState(false);
 
-  /**
-   * Handles new member provisioning.
-   * In production this will:
-   *   1. Call MySQL stored procedure: CALL add_member(:first, :last, :phone, :email, :password_hash)
-   *   2. On duplicate email/phone, MySQL raises a signal caught as the error banner below.
-   */
-  const handleRegister = (e: FormEvent) => {
+  const handleRegister = async (e: FormEvent) => {
     e.preventDefault();
-    // Demo: toggle error state to preview the duplicate-entry error UI.
-    // In production, flip to the success path when the SP returns OK.
-    const mockDuplicate = true;
-    if (mockDuplicate) {
+    setShowError(false);
+    setErrorMessage("");
+    setSuccess(false);
+    setLoading(true);
+    try {
+      await apiFetch("/api/members/register", {
+        method: "POST",
+        body: JSON.stringify({
+          first_name: firstName,
+          last_name: lastName,
+          email,
+          password,
+          phone: phone || undefined,
+          address: undefined,
+        }),
+      });
+      setSuccess(true);
+      setFirstName("");
+      setLastName("");
+      setPhone("");
+      setEmail("");
+      setPassword("");
+    } catch (err: unknown) {
+      const msg = err && typeof err === "object" && "message" in err ? String((err as { message: string }).message) : "Registration failed.";
+      setErrorMessage(msg);
       setShowError(true);
-    } else {
-      setShowError(false);
-      console.log("[MySQL] Executing CALL add_member() stored procedure...");
+    } finally {
+      setLoading(false);
     }
   };
 
-  const dismissError = () => setShowError(false);
+  const dismissError = () => {
+    setShowError(false);
+    setErrorMessage("");
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
@@ -236,8 +257,7 @@ export default function MemberRegistrationPage({
                   Registration Failed
                 </p>
                 <p className="mt-0.5 text-xs text-red-700">
-                  Member already exists or Email already registered. Please
-                  verify the details and try a different email address.
+                  {errorMessage || "Member already exists or email already registered. Please try again or log in."}
                 </p>
               </div>
               <button
@@ -256,6 +276,12 @@ export default function MemberRegistrationPage({
                   <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
                 </svg>
               </button>
+            </div>
+          )}
+
+          {success && (
+            <div className="mb-6 rounded-2xl border border-emerald-200 bg-emerald-100/50 px-4 py-3 text-sm text-emerald-800">
+              Member registered successfully.
             </div>
           )}
 
@@ -390,9 +416,10 @@ export default function MemberRegistrationPage({
             {/* Submit */}
             <button
               type="submit"
-              className="mt-1 w-full transform rounded-full bg-slate-900 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0"
+              disabled={loading}
+              className="mt-1 w-full transform rounded-full bg-slate-900 py-3.5 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0 disabled:opacity-70"
             >
-              Provision Member Account
+              {loading ? "Registering…" : "Provision Member Account"}
             </button>
           </form>
         </div>
