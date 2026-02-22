@@ -54,7 +54,7 @@ export default function AdminDashboard() {
 
       {/* Recent Loans table */}
       <div className="rounded-xl border overflow-hidden"
-        style={{ background: "white", borderColor: "hsl(220,20%,88%)" }}>
+        style={{ background: "white" }}>
         <div className="flex items-center justify-between px-6 py-4"
           style={{ borderBottom: "1px solid hsl(220,20%,88%)" }}>
           <div className="flex items-center gap-2">
