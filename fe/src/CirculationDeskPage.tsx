@@ -392,6 +392,7 @@ export default function CirculationDeskPage({ onLogout, onNavigate }: Circulatio
                         </svg>
                       </button>
                     </div>
+                  )}
                   {returnSuccess && (
                     <div className="mb-5 rounded-2xl border border-emerald-200 bg-emerald-100/50 px-4 py-3 text-sm text-emerald-800">
                       Return processed successfully.
