@@ -26,23 +26,23 @@ export default function StaffLogin() {
   };
 
   return (
-    <div className="relative min-h-screen overflow-hidden bg-slate-100 font-sans text-slate-900">
-      {/* Cooler matte acrylic mesh background — internal system */}
+    <div className="relative min-h-screen overflow-hidden bg-amber-100 font-sans text-slate-900">
+      {/* Warm matte acrylic mesh background — matches admin theme */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-32 left-1/2 h-[56rem] w-[56rem] -translate-x-1/2 rounded-full bg-slate-300/70 blur-3xl" />
-        <div className="absolute -left-40 top-10 h-[48rem] w-[48rem] rounded-full bg-sky-200/60 blur-3xl" />
-        <div className="absolute -right-40 top-32 h-[52rem] w-[52rem] rounded-full bg-indigo-200/50 blur-3xl" />
-        <div className="absolute -bottom-40 left-1/3 h-[52rem] w-[52rem] -translate-x-1/2 rounded-full bg-slate-200/60 blur-3xl" />
-        <div className="absolute bottom-0 right-0 h-[40rem] w-[40rem] rounded-full bg-sky-100/50 blur-3xl" />
+        <div className="absolute -top-32 left-1/2 h-[56rem] w-[56rem] -translate-x-1/2 rounded-full bg-amber-300/80 blur-3xl" />
+        <div className="absolute -left-40 top-10 h-[48rem] w-[48rem] rounded-full bg-rose-300/75 blur-3xl" />
+        <div className="absolute -right-40 top-32 h-[52rem] w-[52rem] rounded-full bg-orange-300/70 blur-3xl" />
+        <div className="absolute -bottom-40 left-1/3 h-[52rem] w-[52rem] -translate-x-1/2 rounded-full bg-pink-300/70 blur-3xl" />
+        <div className="absolute bottom-0 right-0 h-[40rem] w-[40rem] rounded-full bg-yellow-200/60 blur-3xl" />
       </div>
 
       {/* Centered layout */}
       <div className="relative flex min-h-screen items-center justify-center px-4 py-12">
-        <div className="w-full max-w-md rounded-3xl border border-slate-200/60 bg-white/50 p-8 shadow-2xl shadow-slate-200/60 backdrop-blur-2xl ring-1 ring-slate-300/40">
+        <div className="w-full max-w-md rounded-3xl border border-white/60 bg-white/40 p-8 shadow-2xl shadow-orange-200/60 backdrop-blur-2xl ring-1 ring-white/50">
 
           {/* Branding header */}
           <div className="mb-8 flex flex-col items-center gap-3">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-slate-200/60 bg-white/60 shadow-md shadow-slate-100/60 backdrop-blur-xl">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/60 bg-white/60 shadow-md shadow-orange-100/60 backdrop-blur-xl">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -55,10 +55,10 @@ export default function StaffLogin() {
             </div>
             <div className="text-center">
               <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-                City Archive Library | Restricted Librarian Access
+                City Archive Library
               </h1>
               <p className="mt-0.5 text-sm text-slate-500">
-                Internal staff workspace
+                Librarian Portal — Staff Access
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export default function StaffLogin() {
           {/* Login form */}
           <form onSubmit={handleLogin} className="flex flex-col gap-4">
             {/* Staff Email */}
-            <div className="group flex items-center gap-3 rounded-full border border-slate-200/60 bg-white/50 px-4 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 ease-out focus-within:border-slate-300/80 focus-within:bg-white/60 focus-within:ring-2 focus-within:ring-slate-400/60">
+            <div className="group flex items-center gap-3 rounded-full border border-white/60 bg-white/40 px-4 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 ease-out focus-within:border-white/80 focus-within:bg-white/55 focus-within:ring-2 focus-within:ring-sky-300/80">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -94,7 +94,7 @@ export default function StaffLogin() {
             </div>
 
             {/* Password */}
-            <div className="group flex items-center gap-3 rounded-full border border-slate-200/60 bg-white/50 px-4 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 ease-out focus-within:border-slate-300/80 focus-within:bg-white/60 focus-within:ring-2 focus-within:ring-slate-400/60">
+            <div className="group flex items-center gap-3 rounded-full border border-white/60 bg-white/40 px-4 py-3 shadow-sm backdrop-blur-sm transition-all duration-200 ease-out focus-within:border-white/80 focus-within:bg-white/55 focus-within:ring-2 focus-within:ring-sky-300/80">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -115,17 +115,25 @@ export default function StaffLogin() {
               />
             </div>
 
-            {/* Submit button — dark slate-900 */}
+            {/* Submit button */}
             <button
               type="submit"
               disabled={loading}
               className="mt-1 w-full transform rounded-full bg-slate-900 py-3 text-sm font-semibold text-white shadow-md transition-all duration-200 ease-out hover:bg-slate-800 hover:shadow-lg active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/80 focus-visible:ring-offset-0 disabled:opacity-70"
             >
-              {loading ? "Signing in…" : "Authenticate Secure Session"}
+              {loading ? "Signing in…" : "Sign In"}
             </button>
           </form>
 
-          {/* No registration link — staff provisioned by DB Admin only */}
+          {/* Back link */}
+          <div className="mt-6 text-center">
+            <a
+              href="/"
+              className="text-sm text-slate-500 transition-colors duration-150 hover:text-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-300/80 rounded"
+            >
+              ← Back to Home
+            </a>
+          </div>
         </div>
       </div>
     </div>

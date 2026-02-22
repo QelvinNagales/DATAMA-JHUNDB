@@ -1,63 +1,33 @@
 import { useState } from "react";
-import CirculationDeskPage from "./CirculationDeskPage";
-import CTODashboardPage from "./CTODashboardPage";
-import CatalogingPage from "./CatalogingPage";
-import MemberRegistrationPage from "./MemberRegistrationPage";
-import FinancialSettlementPage from "./FinancialSettlementPage";
+import AdminLayout, { type AdminPage } from "./admin/AdminLayout";
+import AdminDashboard from "./admin/AdminDashboard";
+import AdminMembers from "./admin/AdminMembers";
+import AdminBooks from "./admin/AdminBooks";
+import AdminAuthors from "./admin/AdminAuthors";
+import AdminLoans from "./admin/AdminLoans";
+import AdminFines from "./admin/AdminFines";
 
-type AdminPage = "cto" | "circulation" | "cataloging" | "member-registration" | "financial-settlement";
+const PAGE_COMPONENT: Record<AdminPage, React.FC> = {
+  dashboard: AdminDashboard,
+  members: AdminMembers,
+  books: AdminBooks,
+  authors: AdminAuthors,
+  loans: AdminLoans,
+  fines: AdminFines,
+};
 
 export default function AdminApp() {
-  const [adminPage, setAdminPage] = useState<AdminPage>("cto");
+  const [adminPage, setAdminPage] = useState<AdminPage>("dashboard");
 
   const handleLogout = () => {
     window.location.href = "/";
   };
 
-  if (adminPage === "cto") {
-    return (
-      <CTODashboardPage
-        onNavigate={setAdminPage}
-        onLogout={handleLogout}
-      />
-    );
-  }
+  const ActivePage = PAGE_COMPONENT[adminPage];
 
-  if (adminPage === "cataloging") {
-    return (
-      <CatalogingPage
-        onLogout={handleLogout}
-        onNavigate={setAdminPage}
-      />
-    );
-  }
-
-  if (adminPage === "circulation") {
-    return (
-      <CirculationDeskPage
-        onLogout={handleLogout}
-        onNavigate={setAdminPage}
-      />
-    );
-  }
-
-  if (adminPage === "member-registration") {
-    return (
-      <MemberRegistrationPage
-        onNavigate={setAdminPage}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
-  if (adminPage === "financial-settlement") {
-    return (
-      <FinancialSettlementPage
-        onNavigate={setAdminPage}
-        onLogout={handleLogout}
-      />
-    );
-  }
-
-  return null;
+  return (
+    <AdminLayout activePage={adminPage} onNavigate={setAdminPage} onLogout={handleLogout}>
+      <ActivePage />
+    </AdminLayout>
+  );
 }
