@@ -9,7 +9,12 @@ import MemberDashboard from "./pages/MemberDashboard";
 
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminMembers from "./pages/admin/AdminMembers";
+import AdminBooks from "./pages/admin/AdminBooks";
+import AdminAuthors from "./pages/admin/AdminAuthors";
+import AdminCategories from "./pages/admin/AdminCategories";
 import AdminLoans from "./pages/admin/AdminLoans";
+import AdminFines from "./pages/admin/AdminFines";
+import AdminLibrarians from "./pages/admin/AdminLibrarians";
 
 function App() {
   return (
@@ -28,7 +33,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          {/* Admin — all wrapped in AdminLayout */}
+          {/* Admin */}
           <Route path="/admin" element={
             <ProtectedRoute role="admin">
               <AdminLayout><AdminDashboard /></AdminLayout>
@@ -39,64 +44,39 @@ function App() {
               <AdminLayout><AdminMembers /></AdminLayout>
             </ProtectedRoute>
           } />
+          <Route path="/admin/books" element={
+            <ProtectedRoute role="admin">
+              <AdminLayout><AdminBooks /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/authors" element={
+            <ProtectedRoute role="admin">
+              <AdminLayout><AdminAuthors /></AdminLayout>
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/categories" element={
+            <ProtectedRoute role="admin">
+              <AdminLayout><AdminCategories /></AdminLayout>
+            </ProtectedRoute>
+          } />
           <Route path="/admin/loans" element={
             <ProtectedRoute role="admin">
               <AdminLayout><AdminLoans /></AdminLayout>
             </ProtectedRoute>
           } />
-          <Route path="/admin/books" element={
-            <ProtectedRoute role="admin">
-              <AdminLayout>
-                <div className="space-y-4">
-                  <h1 className="text-2xl font-bold" style={{ color: "hsl(220,60%,15%)" }}>Books</h1>
-                  <p style={{ color: "hsl(220,15%,46%)" }}>Book management coming soon.</p>
-                </div>
-              </AdminLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/authors" element={
-            <ProtectedRoute role="admin">
-              <AdminLayout>
-                <div className="space-y-4">
-                  <h1 className="text-2xl font-bold" style={{ color: "hsl(220,60%,15%)" }}>Authors</h1>
-                  <p style={{ color: "hsl(220,15%,46%)" }}>Author management coming soon.</p>
-                </div>
-              </AdminLayout>
-            </ProtectedRoute>
-          } />
-          <Route path="/admin/categories" element={
-            <ProtectedRoute role="admin">
-              <AdminLayout>
-                <div className="space-y-4">
-                  <h1 className="text-2xl font-bold" style={{ color: "hsl(220,60%,15%)" }}>Categories</h1>
-                  <p style={{ color: "hsl(220,15%,46%)" }}>Category management coming soon.</p>
-                </div>
-              </AdminLayout>
-            </ProtectedRoute>
-          } />
           <Route path="/admin/fines" element={
             <ProtectedRoute role="admin">
-              <AdminLayout>
-                <div className="space-y-4">
-                  <h1 className="text-2xl font-bold" style={{ color: "hsl(220,60%,15%)" }}>Fines</h1>
-                  <p style={{ color: "hsl(220,15%,46%)" }}>Fines management coming soon.</p>
-                </div>
-              </AdminLayout>
+              <AdminLayout><AdminFines /></AdminLayout>
             </ProtectedRoute>
           } />
           <Route path="/admin/librarians" element={
             <ProtectedRoute role="admin">
-              <AdminLayout>
-                <div className="space-y-4">
-                  <h1 className="text-2xl font-bold" style={{ color: "hsl(220,60%,15%)" }}>Librarians</h1>
-                  <p style={{ color: "hsl(220,15%,46%)" }}>Librarian management coming soon.</p>
-                </div>
-              </AdminLayout>
+              <AdminLayout><AdminLibrarians /></AdminLayout>
             </ProtectedRoute>
           } />
 
           {/* Catch all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>

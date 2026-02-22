@@ -18,7 +18,7 @@ const categoryColors: Record<string, { color: string; bg: string }> = {
   Fiction: { color: "hsl(220,85%,50%)", bg: "hsl(220,85%,50%,0.1)" },
   "Science Fiction": { color: "hsl(255,70%,60%)", bg: "hsl(255,70%,60%,0.1)" },
   Romance: { color: "hsl(340,75%,55%)", bg: "hsl(340,75%,55%,0.1)" },
-  Adventure: { color: "hsl(30,95%,50%)", bg: "hsl(30,95%,50%,0.1)" },
+  Adventure: { color: "linear-gradient(135deg,#f48fb1,#ffd54f)", bg: "hsl(30,95%,50%,0.1)" },
   History: { color: "hsl(152,60%,40%)", bg: "hsl(152,60%,40%,0.1)" },
 };
 

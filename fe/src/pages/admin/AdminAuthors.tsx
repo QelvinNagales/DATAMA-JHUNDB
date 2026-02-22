@@ -25,7 +25,7 @@ export default function AdminAuthors() {
           <p className="mt-1 text-sm" style={{ color: "hsl(220,15%,46%)" }}>Manage book authors</p>
         </div>
         <button className="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90"
-          style={{ background: "hsl(220,85%,50%)" }}>
+          style={{ background: "hsl(323, 69%, 70%)" }}>
           <Feather className="h-4 w-4" /> + Add Author
         </button>
       </div>

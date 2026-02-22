@@ -84,7 +84,7 @@ export default function AdminFines() {
                   </td>
                   <td style={{ padding: "13px 20px" }}>
                     <span style={{ display: "inline-flex", alignItems: "center", gap: 5, borderRadius: 20, padding: "3px 10px", fontSize: 12, fontWeight: 600, color: fine.status === "Paid" ? "hsl(152,60%,35%)" : "hsl(30,80%,40%)", background: fine.status === "Paid" ? "hsl(152,60%,92%)" : "hsl(30,95%,90%)" }}>
-                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: fine.status === "Paid" ? "hsl(152,60%,45%)" : "hsl(30,95%,50%)" }} />
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: fine.status === "Paid" ? "hsl(152,60%,45%)" : "linear-gradient(135deg,#f48fb1,#ffd54f)" }} />
                       {fine.status}
                     </span>
                   </td>

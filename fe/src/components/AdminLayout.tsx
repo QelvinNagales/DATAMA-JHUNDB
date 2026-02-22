@@ -1,162 +1,151 @@
-import { useState, ReactNode } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { useState } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
   LayoutDashboard, Users, BookOpen, Feather,
   Tags, ArrowLeftRight, DollarSign, UserCog,
-  ChevronLeft, Menu, LogOut, Library,
+  LogOut, Menu, ChevronRight,
 } from "lucide-react";
 
-const navItems = [
-  { title: "Dashboard", path: "/admin", icon: LayoutDashboard },
-  { title: "Members", path: "/admin/members", icon: Users },
-  { title: "Books", path: "/admin/books", icon: BookOpen },
-  { title: "Authors", path: "/admin/authors", icon: Feather },
-  { title: "Categories", path: "/admin/categories", icon: Tags },
-  { title: "Loans", path: "/admin/loans", icon: ArrowLeftRight },
-  { title: "Fines", path: "/admin/fines", icon: DollarSign },
-  { title: "Librarians", path: "/admin/librarians", icon: UserCog },
+const NAV = [
+  { label: "Dashboard",  path: "/admin",            icon: LayoutDashboard },
+  { label: "Members",    path: "/admin/members",     icon: Users },
+  { label: "Books",      path: "/admin/books",       icon: BookOpen },
+  { label: "Authors",    path: "/admin/authors",     icon: Feather },
+  { label: "Categories", path: "/admin/categories",  icon: Tags },
+  { label: "Loans",      path: "/admin/loans",       icon: ArrowLeftRight },
+  { label: "Fines",      path: "/admin/fines",       icon: DollarSign },
+  { label: "Librarians", path: "/admin/librarians",  icon: UserCog },
 ];
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
-  const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
+interface AdminLayoutProps { children: React.ReactNode; }
+
+export default function AdminLayout({ children }: AdminLayoutProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleLogout = () => {
-    logout();
-    navigate("/login");
-  };
+  const handleLogout = () => { logout(); navigate("/"); };
+  const isActive = (path: string) =>
+    path === "/admin" ? location.pathname === "/admin" : location.pathname.startsWith(path);
+
+  const Sidebar = () => (
+    <aside style={{
+      width: 240, minHeight: "100vh", display: "flex", flexDirection: "column",
+      background: "linear-gradient(180deg, #f8bbd0 0%, #fff9c4 100%)",
+      borderRight: "1px solid rgba(255,255,255,0.6)",
+    }}>
+      {/* Logo */}
+      <div style={{ padding: "28px 24px 20px", borderBottom: "1px solid rgba(255,255,255,0.5)" }}>
+        <div style={{ fontWeight: 800, fontSize: 16, color: "#b5548a", letterSpacing: "-0.02em" }}>
+          JhunDB
+        </div>
+        <div style={{ fontSize: 11, color: "rgba(180,80,120,0.55)", marginTop: 2, letterSpacing: "0.05em" }}>
+          Admin Console
+        </div>
+      </div>
+
+      {/* Nav */}
+      <nav style={{ flex: 1, padding: "16px 12px", display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ fontSize: 10, fontWeight: 600, letterSpacing: "0.1em", color: "rgba(180,80,120,0.45)", padding: "4px 12px 8px", textTransform: "uppercase" }}>
+          Library Sections
+        </div>
+        {NAV.map(({ label, path, icon: Icon }) => {
+          const active = isActive(path);
+          return (
+            <button key={path} onClick={() => { navigate(path); setSidebarOpen(false); }}
+              style={{
+                display: "flex", alignItems: "center", gap: 10,
+                padding: "9px 12px", borderRadius: 10, border: "none", cursor: "pointer",
+                background: active ? "linear-gradient(135deg,#f48fb1,#ffd54f)" : "transparent",
+                color: active ? "white" : "#822952",
+                fontWeight: active ? 600 : 400, fontSize: 14,
+                transition: "all 0.15s", width: "100%", textAlign: "left",
+                boxShadow: active ? "0 2px 10px rgba(244,143,177,0.4)" : "none",
+              }}
+              onMouseEnter={(e) => { if (!active) e.currentTarget.style.background = "rgba(255,255,255,0.55)"; }}
+              onMouseLeave={(e) => { if (!active) e.currentTarget.style.background = "transparent"; }}
+            >
+              <Icon size={16} />
+              <span style={{ flex: 1 }}>{label}</span>
+              {active && <ChevronRight size={13} style={{ opacity: 0.8 }} />}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* User + Logout */}
+      <div style={{ padding: "16px 12px", borderTop: "1px solid rgba(255,255,255,0.5)" }}>
+        <div style={{ padding: "8px 12px", marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+          <div style={{
+            width: 32, height: 32, borderRadius: "50%",
+            background: "linear-gradient(135deg,#f48fb1,#ffd54f)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            fontSize: 12, fontWeight: 700, color: "white",
+          }}>
+            {user?.email?.[0]?.toUpperCase() ?? "A"}
+          </div>
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: "#9c4a70" }}>
+              {user?.email?.split("@")[0] ?? "Admin"}
+            </div>
+            <div style={{ fontSize: 10, color: "rgba(166, 35, 87, 0.5)" }}>Administrator</div>
+          </div>
+        </div>
+
+        <button onClick={handleLogout}
+          style={{
+            display: "flex", alignItems: "center", gap: 8,
+            width: "100%", padding: "9px 12px", borderRadius: 10, border: "none",
+            background: "rgba(255,100,100,0.12)", color: "#e57373",
+            fontSize: 13, fontWeight: 500, cursor: "pointer", transition: "all 0.15s",
+          }}
+          onMouseEnter={(e) => e.currentTarget.style.background = "rgba(255,100,100,0.22)"}
+          onMouseLeave={(e) => e.currentTarget.style.background = "rgba(255,100,100,0.12)"}
+        >
+          <LogOut size={15} /> Logout
+        </button>
+      </div>
+    </aside>
+  );
 
   return (
-    <div className="flex min-h-screen w-full" style={{ background: "hsl(220,25%,97%)" }}>
+    <div style={{ display: "flex", minHeight: "100vh", background: "linear-gradient(135deg, #fce4ec 0%, #fff9c4 60%, #ffe0b2 100%)" }}>
 
-      {/* Mobile menu button */}
-      <button
-        className="fixed top-4 left-4 z-50 rounded-lg p-2 shadow-md lg:hidden"
-        style={{ background: "white" }}
-        onClick={() => setMobileOpen((o) => !o)}
-      >
-        <Menu className="h-5 w-5" style={{ color: "hsl(220,60%,15%)" }} />
-      </button>
+      {/* Desktop sidebar */}
+      <div className="hidden md:flex">
+        <Sidebar />
+      </div>
 
-      {/* Mobile backdrop */}
-      {mobileOpen && (
-        <div
-          className="fixed inset-0 z-30 backdrop-blur-sm lg:hidden"
-          style={{ background: "rgba(0,0,0,0.3)" }}
-          onClick={() => setMobileOpen(false)}
-        />
+      {/* Mobile overlay */}
+      {sidebarOpen && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "flex" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.3)" }}
+            onClick={() => setSidebarOpen(false)} />
+          <div style={{ position: "relative", zIndex: 10 }}>
+            <Sidebar />
+          </div>
+        </div>
       )}
 
-      {/* Sidebar */}
-      <aside
-        className="fixed inset-y-0 left-0 z-40 flex flex-col transition-all duration-300"
-        style={{
-          background: "hsl(220,65%,18%)",
-          width: collapsed ? "4rem" : "16rem",
-          transform: mobileOpen || window.innerWidth >= 1024 ? "translateX(0)" : "translateX(-100%)",
-        }}
-      >
-        {/* Logo */}
-        <div className="flex h-16 items-center gap-3 px-4"
-          style={{ borderBottom: "1px solid hsl(220,50%,28%)" }}>
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg"
-            style={{ background: "hsl(30,95%,55%)" }}>
-            <Library className="h-4 w-4 text-white" />
-          </div>
-          {!collapsed && (
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">JhunDB</p>
-              <p className="truncate text-xs" style={{ color: "hsl(220,25%,65%)" }}>
-                Database Solutions
-              </p>
-            </div>
-          )}
-        </div>
+      {/* Main */}
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", minWidth: 0 }}>
 
-        {/* Nav items */}
-        <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="space-y-1">
-            {navItems.map((item) => (
-              <li key={item.path}>
-                <NavLink
-                  to={item.path}
-                  end={item.path === "/admin"}
-                  onClick={() => setMobileOpen(false)}
-                  className={({ isActive }) =>
-                    `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-                      isActive ? "active-nav" : "inactive-nav"
-                    }`
-                  }
-                  style={({ isActive }) => ({
-                    background: isActive ? "hsl(220,55%,25%)" : "transparent",
-                    color: isActive ? "hsl(220,25%,96%)" : "hsl(220,25%,72%)",
-                  })}
-                >
-                  <item.icon className="h-4 w-4 shrink-0" />
-                  {!collapsed && <span>{item.title}</span>}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-
-        {/* Footer */}
-        <div style={{ borderTop: "1px solid hsl(220,50%,28%)" }}>
-          {/* User info */}
-          {!collapsed && (
-            <div className="px-4 py-3">
-              <p className="text-xs font-semibold text-white truncate">{user?.email}</p>
-              <p className="text-xs mt-0.5" style={{ color: "hsl(220,25%,60%)" }}>Administrator</p>
-            </div>
-          )}
-
-          {/* Logout */}
-          <button
-            onClick={handleLogout}
-            className="flex w-full items-center gap-3 px-3 py-2.5 text-sm font-medium transition-colors"
-            style={{ color: "hsl(220,25%,65%)" }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "hsl(0,72%,65%)";
-              (e.currentTarget as HTMLElement).style.background = "hsl(0,50%,20%)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.color = "hsl(220,25%,65%)";
-              (e.currentTarget as HTMLElement).style.background = "transparent";
-            }}
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            {!collapsed && <span>Logout</span>}
+        {/* Mobile topbar */}
+        <header className="flex md:hidden items-center gap-4 px-4 py-3"
+          style={{ background: "linear-gradient(135deg,#f8bbd0,#fff9c4)", borderBottom: "1px solid rgba(255,255,255,0.6)" }}>
+          <button onClick={() => setSidebarOpen(true)}
+            style={{ background: "none", border: "none", cursor: "pointer", color: "#ac3a79" }}>
+            <Menu size={20} />
           </button>
+          <span style={{ fontWeight: 700, fontSize: 15, color: "#952864" }}>JhunDB Admin</span>
+        </header>
 
-          {/* Collapse toggle desktop */}
-          <button
-            onClick={() => setCollapsed((c) => !c)}
-            className="hidden h-10 w-full items-center justify-center lg:flex transition-colors"
-            style={{ color: "hsl(220,25%,50%)" }}
-          >
-            <ChevronLeft
-              className="h-4 w-4 transition-transform duration-300"
-              style={{ transform: collapsed ? "rotate(180deg)" : "rotate(0deg)" }}
-            />
-          </button>
-        </div>
-      </aside>
-
-      {/* Spacer */}
-      <div
-        className="hidden shrink-0 transition-all duration-300 lg:block"
-        style={{ width: collapsed ? "4rem" : "16rem" }}
-      />
-
-      {/* Main content */}
-      <main className="flex-1 overflow-x-hidden">
-        <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+        <main style={{ flex: 1, padding: "32px 32px 40px", overflowY: "auto" }}>
           {children}
-        </div>
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
